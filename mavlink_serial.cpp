@@ -1,4 +1,4 @@
-/** This example is public domain. */
+
 
 
 /**
@@ -254,7 +254,9 @@ int serial_wait(int serial_fd)
 			msgReceived = mavlink_parse_char(MAVLINK_COMM_1, cp, &message, &status);
 			if (lastStatus.packet_rx_drop_count != status.packet_rx_drop_count)
 			{
-				if (verbose || debug) printf("ERROR: DROPPED %d PACKETS\n", status.packet_rx_drop_count);
+				if (verbose || debug) {
+					printf("ERROR: DROPPED %d PACKETS\n", status.packet_rx_drop_count);
+					//printf("msgReceived: %d",msgReceived);
 				if (debug)
 				{
 					unsigned char v=cp;
@@ -331,11 +333,56 @@ int serial_wait(int serial_fd)
 					scaled_imu_receive_counter++;
 				}
 				break;
+				case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+				{
+					mavlink_global_position_int_t packet;
+					mavlink_msg_global_position_int_decode(&message, &packet);
+					printf("eccolo!! %d %d %d %d\n",packet.time_boot_ms,packet.lat,packet.lon,packet.hdg );
+				}
+				break;
+				case MAVLINK_MSG_ID_ATTITUDE:
+				{
+					mavlink_attitude_t packet_in;
+					mavlink_msg_attitude_decode(&message, &packet_in);
+					printf("attitude %f %f\n",packet_in.roll,packet_in.pitch );
+				}
+				break;
+
 			}
 		}
 	}
 	return 0;
 }
+}
+//int send_msg(int serial_fd){
+//    int fd = serial_fd;
+//
+//    int sysid = 42;                   ///< ID 20 for this airplane
+//    int compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+//    int type = MAV_TYPE_QUADROTOR;   ///< This system is an airplane / fixed wing
+//    //int type = MAV_TYPE_ANTENNA_TRACKER;   ///< This system is an airplane / fixed wing
+// 
+//// Define the system type, in this case an airplane
+//    uint8_t system_type = MAV_TYPE_FIXED_WING;
+//    uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+// 
+//    uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
+//    uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
+//    uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
+//    // Initialize the required buffers
+//    mavlink_message_t msg;
+//    uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+//// Pack the message
+//    mavlink_msg_heartbeat_pack(sysid,compid, &msg, type, autopilot_type, system_mode, custom_mode, system_state);
+//// Copy the message to the send buffer
+//    uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+//    mavlink_heartbeat_t packet_h;
+//    //mavlink_msg_heartbeat_decode(buf, &packet_h);
+//    printf("HEARTBEAT Type: %d\n",packet_h.type);
+//
+//    write(fd, &buf, len);
+
+//}
 
 int main(int argc, char **argv) {
 
@@ -432,8 +479,8 @@ int main(int argc, char **argv) {
 
 	// Run indefinitely while the serial loop handles data
 	if (!silent) printf("\nREADY, waiting for serial data.\n");
-
-	// while(true) wait loop
+	
+	//while(true) wait loop
 	serial_wait(fd);
 	
 	close_port(fd);
